@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
 import Web3 from "web3";
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./web3.config";
+import {
+  CONTRACT_ABI,
+  CONTRACT_ADDRESS,
+  NFT_ABI,
+  NFT_ADDRESS,
+} from "./web3.config";
 
-const web3 = new Web3("https://rpc-mumbai.maticvigil.com");
+const web3 = new Web3(window.ethereum);
 const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+const nftContract = new web3.eth.Contract(NFT_ABI, NFT_ADDRESS);
 
 function App() {
   const [account, setAccount] = useState("");
   const [myBalance, setMyBalance] = useState();
   const [name, setName] = useState();
   const [totalSupply, setTotalSupply] = useState();
+  const [symbol, setSymbol] = useState();
 
   const onClickAccount = async () => {
     try {
@@ -46,14 +53,29 @@ function App() {
       const balance = await contract.methods.balanceOf(account).call();
       const name = await contract.methods.name().call();
       const totalSupply = await contract.methods.totalSupply().call();
+      const symbol = await contract.methods.symbol().call();
 
       setMyBalance(parseInt(web3.utils.fromWei(balance)));
       setName(name);
-      setTotalSupply(totalSupply);
+      setTotalSupply(parseInt(web3.utils.fromWei(totalSupply)));
+      setSymbol(symbol);
 
       console.log(balance);
       console.log(name);
       console.log(totalSupply);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onClickMint = async () => {
+    try {
+      const result = await nftContract.methods
+        .mintNft(
+          "https://gateway.pinata.cloud/ipfs/QmdhBnv2DDVKrM5wYY417ns1D1n3QZYPx7HyvZqVEisiQo"
+        )
+        .send({ from: account });
+      console.log(nftContract);
     } catch (error) {
       console.error(error);
     }
@@ -73,11 +95,17 @@ function App() {
           <div className="flex items-center mt-4">
             {myBalance && (
               <div>
-                {name} {myBalance}개
+                {name} {symbol} {myBalance} 개
+                <div>총 발행량: {totalSupply} 개</div>
               </div>
             )}
             <button className="btn-style ml-2" onClick={onClickBalance}>
               잔액 조회
+            </button>
+          </div>
+          <div className="flex items-center mt-4">
+            <button className="ml-2 btn-style" onClick={onClickMint}>
+              민팅
             </button>
           </div>
         </div>
